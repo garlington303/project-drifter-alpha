@@ -1,0 +1,5 @@
+{
+  "name": "Project Drifter",
+  "description": "A 2.5D isometric foundation with procedural infinite terrain and smooth player movement.",
+  "requestFramePermissions": []
+}
