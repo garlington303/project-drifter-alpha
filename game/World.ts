@@ -35,6 +35,10 @@ export class World implements IWorld {
   tilePool: TilePool;
   spawnPosition: Position;
   
+  // Spatial Hash for Static Object Collision (Optimization)
+  // Key: "x,y" integer coordinates
+  private staticCollisionMap: Map<string, WorldObject>;
+
   // Generators
   overworldGen: OverworldGenerator;
   rooftopGen: RooftopGenerator;
@@ -50,6 +54,7 @@ export class World implements IWorld {
     this.chunks = new Map();
     this.objects = [];
     this.enemies = [];
+    this.staticCollisionMap = new Map();
     this.tilePool = new TilePool();
     this.overworldGen = new OverworldGenerator();
     this.rooftopGen = new RooftopGenerator();
@@ -67,6 +72,7 @@ export class World implements IWorld {
     this.chunks.clear();
     this.objects = [];
     this.enemies = []; // Clear enemies on switch
+    this.staticCollisionMap.clear();
 
     let data;
     if (type === 'rooftop') {
@@ -79,6 +85,9 @@ export class World implements IWorld {
     this.objects = data.objects;
     this.spawnPosition = data.spawnPosition;
     
+    // Build Spatial Hash
+    this.buildCollisionMap();
+
     // Spawn Test Enemies (Varied Squad)
     if (type === 'overworld') {
        this.spawnEnemy(this.spawnPosition.x + 5, this.spawnPosition.y + 5, 'tank');
@@ -87,6 +96,20 @@ export class World implements IWorld {
        this.spawnEnemy(this.spawnPosition.x + 3, this.spawnPosition.y + 8, 'swarmer');
        this.spawnEnemy(this.spawnPosition.x + 5, this.spawnPosition.y + 9, 'swarmer');
     }
+  }
+
+  private buildCollisionMap() {
+      for (const obj of this.objects) {
+          // Door is walkable (triggers logic)
+          if (obj.type === 'door') continue;
+          
+          // Map object to its integer tile coordinate
+          const key = `${Math.round(obj.x)},${Math.round(obj.y)}`;
+          this.staticCollisionMap.set(key, obj);
+          
+          // If object is large (>1 tile), map neighbors? 
+          // For now, our objects (trees/cliffs) act as 1x1 blockers mostly.
+      }
   }
 
   spawnEnemy(x: number, y: number, type: 'basic' | 'shooter' | 'swarmer' | 'sniper' | 'tank' = 'basic') {
@@ -142,18 +165,17 @@ export class World implements IWorld {
     // Rooftop Impassables
     if (tile.type === TileType.Gap) return false;
 
-    // 2. Check Objects (Trees, Cliffs)
-    for (const obj of this.objects) {
-        // Door is walkable (triggers logic)
-        if (obj.type === 'door') continue;
-
-        // Simple circle collision for objects
+    // 2. Check Static Objects (O(1) Lookup)
+    const key = `${Math.round(x)},${Math.round(y)}`;
+    const obj = this.staticCollisionMap.get(key);
+    
+    if (obj) {
+        // Simple circle collision for objects found at this tile
         const dx = x - obj.x;
         const dy = y - obj.y;
-        const dist = Math.sqrt(dx*dx + dy*dy);
-        
+        const distSq = dx*dx + dy*dy;
         const radius = (obj.width || 1) * 0.4;
-        if (dist < radius) return false;
+        if (distSq < radius * radius) return false;
     }
 
     return true;
@@ -168,18 +190,17 @@ export class World implements IWorld {
     if (tile.type === TileType.Stone) return false;
     
     // Projectiles PASS over Water and Gap (Void)
-    // So we don't return false for Water/Gap here.
+    
+    // 2. Check Static Objects (O(1) Lookup)
+    const key = `${Math.round(x)},${Math.round(y)}`;
+    const obj = this.staticCollisionMap.get(key);
 
-    // 2. Check Objects (Trees, Cliffs should still block projectiles)
-    for (const obj of this.objects) {
-        if (obj.type === 'door') continue;
-
+    if (obj) {
         const dx = x - obj.x;
         const dy = y - obj.y;
-        const dist = Math.sqrt(dx*dx + dy*dy);
-        
+        const distSq = dx*dx + dy*dy;
         const radius = (obj.width || 1) * 0.4;
-        if (dist < radius) return false;
+        if (distSq < radius * radius) return false;
     }
 
     return true;
@@ -189,6 +210,11 @@ export class World implements IWorld {
     this.particleSystem.update(deltaTime);
 
     // Check Interactions (like portals)
+    // Optimization: Only iterate objects if they are interactive and near player?
+    // For now, iterating all objects for interaction/fading is okay as N is usually < 1000
+    // But we can optimize Fading to only check visible objects in Renderer, 
+    // keeping Logic update here minimal.
+    
     for (const obj of this.objects) {
         if (obj.type === 'door' && obj.interacted) {
              obj.interacted = false; 
@@ -199,13 +225,21 @@ export class World implements IWorld {
              }
         }
 
-        // Nature Fader
+        // Nature Fader (Distance Check Optimization)
         if (obj.type === 'tree' || obj.type === 'giant_tree' || obj.type === 'cliff') {
-            const dist = Math.sqrt((playerPos.x - obj.x)**2 + (playerPos.y - obj.y)**2);
-            if (dist < 1.5 && playerPos.y < obj.y + 0.5) { 
-                 obj.opacity = 0.5;
+            const dx = playerPos.x - obj.x;
+            const dy = playerPos.y - obj.y;
+            // Quick AABB check before sqrt
+            if (Math.abs(dx) < 2 && Math.abs(dy) < 2) {
+                const distSq = dx*dx + dy*dy;
+                // Fade if close and player is "behind" (y < obj.y)
+                if (distSq < 2.25 && playerPos.y < obj.y + 0.5) { 
+                     obj.opacity = 0.5;
+                } else {
+                     obj.opacity = 1.0;
+                }
             } else {
-                 obj.opacity = 1.0;
+                obj.opacity = 1.0;
             }
         }
     }

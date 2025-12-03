@@ -3,30 +3,23 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Project Drifter V2 - Phaser Edition</title>
+    <title>Project Drifter</title>
+    <script src="https://cdn.tailwindcss.com"></script>
     <style>
-      * {
-        margin: 0;
-        padding: 0;
-        box-sizing: border-box;
-      }
-      body {
-        margin: 0;
-        overflow: hidden;
-        background-color: #0f0f1e;
-        font-family: 'Courier New', monospace;
-      }
-      canvas {
-        display: block;
-      }
-      #game-container {
-        width: 100vw;
-        height: 100vh;
-      }
+      body { margin: 0; overflow: hidden; background-color: #1a1a1a; }
+      canvas { display: block; }
     </style>
-  </head>
+  <script type="importmap">
+{
+  "imports": {
+    "react/": "https://aistudiocdn.com/react@^19.2.0/",
+    "react": "https://aistudiocdn.com/react@^19.2.0",
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/"
+  }
+}
+</script>
+</head>
   <body>
-    <div id="game-container"></div>
-    <script type="module" src="/src/main.js"></script>
+    <div id="root"></div>
   </body>
 </html>

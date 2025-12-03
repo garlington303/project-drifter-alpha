@@ -4,10 +4,19 @@ import { Player } from './Player';
 import { WorldObject, Particle, Enemy, EnemyState } from './types';
 import { TILE_WIDTH, TILE_HEIGHT, COLORS, PLAYER_WIDTH, PLAYER_HEIGHT, CAMERA_LOOK_AHEAD, MAX_CAMERA_OFFSET, PROJECTILE_COLOR, PROJECTILE_SIZE, TREE_WIDTH, TREE_HEIGHT, CLIFF_HEIGHT, GIANT_TREE_WIDTH, GIANT_TREE_HEIGHT } from './constants';
 
-interface Renderable {
-  type: 'player' | 'object' | 'enemy' | 'particle';
-  ySort: number; 
-  draw: () => void;
+// Enum to avoid string comparisons in tight loop
+enum RenderType {
+  Player,
+  Object,
+  Enemy,
+  Corpse,
+  Particle
+}
+
+interface RenderEntry {
+  type: RenderType;
+  ySort: number;
+  ref: any; // Holds reference to the entity (Player, WorldObject, Enemy, Particle)
 }
 
 export class Renderer {
@@ -15,6 +24,7 @@ export class Renderer {
   width: number;
   height: number;
   private playerSprite: HTMLCanvasElement;
+  private renderQueue: RenderEntry[] = []; // Reusable array to avoid GC
 
   constructor(ctx: CanvasRenderingContext2D, width: number, height: number) {
     this.ctx = ctx;
@@ -87,7 +97,9 @@ export class Renderer {
     this.ctx.translate(-playerIso.x, -playerIso.y);
 
     // 1. Draw Terrain
+    // Optimization: Only filter chunks here, tile culling handled inside loop
     const chunks = world.getVisibleChunks();
+    // Simple sort chunks by draw order (Top-Left to Bottom-Right)
     chunks.sort((a, b) => (a.y + a.x) - (b.y + b.x));
 
     for (const chunk of chunks) {
@@ -96,6 +108,7 @@ export class Renderer {
           const iso = this.toIso(tile.worldX, tile.worldY);
           const dx = iso.x - playerIso.x;
           const dy = iso.y - playerIso.y;
+          // Culling check
           if (dx < -halfWidth - margin || dx > halfWidth + margin ||
               dy < -halfHeight - margin || dy > halfHeight + margin) {
             continue;
@@ -105,15 +118,18 @@ export class Renderer {
       }
     }
 
-    // 2. Depth Sorting (Particles + Objects + Players)
-    const renderables: Renderable[] = [];
+    // 2. Collect Renderables
+    // Clear queue without reallocating
+    this.renderQueue.length = 0;
 
-    renderables.push({
-        type: 'player',
+    // Player
+    this.renderQueue.push({
+        type: RenderType.Player,
         ySort: player.position.x + player.position.y,
-        draw: () => this.drawPlayer(playerIso.x, playerIso.y, player)
+        ref: player
     });
 
+    // Objects
     for (const obj of world.objects) {
         const iso = this.toIso(obj.x, obj.y);
         const dx = iso.x - playerIso.x;
@@ -123,10 +139,50 @@ export class Renderer {
           continue;
         }
 
-        renderables.push({
-            type: 'object',
+        this.renderQueue.push({
+            type: RenderType.Object,
             ySort: obj.x + obj.y,
-            draw: () => {
+            ref: obj
+        });
+    }
+
+    // Enemies
+    for (const enemy of world.enemies) {
+        if (enemy.state === EnemyState.Dead) {
+            this.renderQueue.push({
+                type: RenderType.Corpse,
+                ySort: enemy.x + enemy.y - 1000, // corpses below everything
+                ref: enemy
+            });
+        } else {
+            this.renderQueue.push({
+                type: RenderType.Enemy,
+                ySort: enemy.x + enemy.y,
+                ref: enemy
+            });
+        }
+    }
+
+    // Particles
+    for (const p of world.particleSystem.particles) {
+       this.renderQueue.push({
+         type: RenderType.Particle,
+         ySort: p.x + p.y, 
+         ref: p
+       });
+    }
+
+    // Sort
+    this.renderQueue.sort((a, b) => a.ySort - b.ySort);
+
+    // Render loop using switch/case to avoid closure creation
+    for (const item of this.renderQueue) {
+        switch (item.type) {
+            case RenderType.Player:
+                this.drawPlayer(playerIso.x, playerIso.y, item.ref);
+                break;
+            case RenderType.Object:
+                const obj = item.ref as WorldObject;
                 this.ctx.globalAlpha = obj.opacity ?? 1.0;
                 if (obj.type === 'tree' || obj.type === 'giant_tree') {
                     this.drawTree(obj, time);
@@ -138,39 +194,17 @@ export class Renderer {
                     this.drawWorldObject(obj);
                 }
                 this.ctx.globalAlpha = 1.0;
-            }
-        });
-    }
-
-    for (const enemy of world.enemies) {
-        if (enemy.state === EnemyState.Dead) {
-            renderables.push({
-                type: 'enemy',
-                ySort: enemy.x + enemy.y - 1000, // corpses below everything
-                draw: () => this.drawEnemyCorpse(enemy)
-            });
-        } else {
-            renderables.push({
-                type: 'enemy',
-                ySort: enemy.x + enemy.y,
-                draw: () => this.drawEnemy(enemy)
-            });
+                break;
+            case RenderType.Enemy:
+                this.drawEnemy(item.ref);
+                break;
+            case RenderType.Corpse:
+                this.drawEnemyCorpse(item.ref);
+                break;
+            case RenderType.Particle:
+                this.drawParticle(item.ref);
+                break;
         }
-    }
-
-    // Particles
-    for (const p of world.particleSystem.particles) {
-       renderables.push({
-         type: 'particle',
-         ySort: p.x + p.y, // Rough z-sorting
-         draw: () => this.drawParticle(p)
-       });
-    }
-
-    renderables.sort((a, b) => a.ySort - b.ySort);
-
-    for (const r of renderables) {
-        r.draw();
     }
 
     this.drawProjectiles(player, world.enemies);

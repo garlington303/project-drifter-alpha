@@ -42,6 +42,7 @@ export class ParticleSystem {
   }
 
   public update(deltaTime: number) {
+    // Iterate backwards to allow safe removal
     for (let i = this.particles.length - 1; i >= 0; i--) {
       const p = this.particles[i];
       p.life -= deltaTime;
@@ -56,7 +57,13 @@ export class ParticleSystem {
       }
 
       if (p.life <= 0) {
-        this.particles.splice(i, 1);
+        // Optimization: Swap with last element and pop (O(1)) instead of splice (O(N))
+        // Order of particles does not matter for rendering
+        const lastIndex = this.particles.length - 1;
+        if (i !== lastIndex) {
+            this.particles[i] = this.particles[lastIndex];
+        }
+        this.particles.pop();
       }
     }
   }

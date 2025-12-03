@@ -49,22 +49,22 @@ export class EnemyAI implements Enemy, IDamageable {
         case 'swarmer':
             this.maxHealth = SWARMER_HP;
             this.color = COLORS.enemySwarmer;
-            this.hitboxRadius = 0.4; // Smaller
+            this.hitboxRadius = 0.8; // Increased from 0.4 for easier hits
             break;
         case 'sniper':
             this.maxHealth = SNIPER_HP;
             this.color = COLORS.enemySniper;
-            this.hitboxRadius = 0.5;
+            this.hitboxRadius = 1.0; // Increased from 0.5
             break;
         case 'tank':
             this.maxHealth = TANK_HP;
             this.color = COLORS.enemyTank;
-            this.hitboxRadius = 0.7; // Larger
+            this.hitboxRadius = 1.2; // Increased from 0.7
             break;
         default:
             this.maxHealth = 100; // Basic
             this.color = COLORS.enemyIdle;
-            this.hitboxRadius = 0.5;
+            this.hitboxRadius = 1.0; // Increased from 0.5
             break;
     }
     this.health = this.maxHealth;
