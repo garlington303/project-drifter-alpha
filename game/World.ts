@@ -1,7 +1,6 @@
 
 import { Chunk, Position, Tile, TileType, ITilePool, WorldObject, IWorld, Particle, Enemy } from './types';
 import { OverworldGenerator } from './OverworldGenerator';
-import { RooftopGenerator } from './RooftopGenerator';
 import { CHUNK_SIZE, TILE_WIDTH, TILE_HEIGHT, PROJECTILE_SIZE, PROJECTILE_SPEED, COLORS } from './constants';
 import { EnemyAI } from './Enemy';
 import { ParticleSystem } from './ParticleSystem';
@@ -41,8 +40,7 @@ export class World implements IWorld {
 
   // Generators
   overworldGen: OverworldGenerator;
-  rooftopGen: RooftopGenerator;
-  currentMap: 'overworld' | 'rooftop' = 'overworld';
+  currentMap: 'overworld' = 'overworld';
 
   // Systems
   particleSystem: ParticleSystem;
@@ -57,29 +55,22 @@ export class World implements IWorld {
     this.staticCollisionMap = new Map();
     this.tilePool = new TilePool();
     this.overworldGen = new OverworldGenerator();
-    this.rooftopGen = new RooftopGenerator();
     
     this.particleSystem = new ParticleSystem();
     this.cameraShake = new CameraShake();
     this.combatDirector = new CombatDirector();
     
-    // Start with Overworld
-    this.loadMap('overworld');
+    // Generate Overworld
+    this.initWorld();
   }
 
-  loadMap(type: 'overworld' | 'rooftop') {
-    this.currentMap = type;
+  initWorld() {
     this.chunks.clear();
     this.objects = [];
-    this.enemies = []; // Clear enemies on switch
+    this.enemies = [];
     this.staticCollisionMap.clear();
 
-    let data;
-    if (type === 'rooftop') {
-      data = this.rooftopGen.generateMap(this.tilePool);
-    } else {
-      data = this.overworldGen.generateOverworld(this.tilePool);
-    }
+    const data = this.overworldGen.generateOverworld(this.tilePool);
 
     this.chunks = data.chunks;
     this.objects = data.objects;
@@ -87,33 +78,18 @@ export class World implements IWorld {
     
     // Build Spatial Hash
     this.buildCollisionMap();
-
-    // Spawn Test Enemies (Varied Squad)
-    if (type === 'overworld') {
-       this.spawnEnemy(this.spawnPosition.x + 5, this.spawnPosition.y + 5, 'tank');
-       this.spawnEnemy(this.spawnPosition.x + 8, this.spawnPosition.y + 4, 'sniper');
-       this.spawnEnemy(this.spawnPosition.x + 4, this.spawnPosition.y + 8, 'swarmer');
-       this.spawnEnemy(this.spawnPosition.x + 3, this.spawnPosition.y + 8, 'swarmer');
-       this.spawnEnemy(this.spawnPosition.x + 5, this.spawnPosition.y + 9, 'swarmer');
-    }
   }
 
   private buildCollisionMap() {
       for (const obj of this.objects) {
-          // Door is walkable (triggers logic)
-          if (obj.type === 'door') continue;
-          
           // Map object to its integer tile coordinate
           const key = `${Math.round(obj.x)},${Math.round(obj.y)}`;
           this.staticCollisionMap.set(key, obj);
-          
-          // If object is large (>1 tile), map neighbors? 
-          // For now, our objects (trees/cliffs) act as 1x1 blockers mostly.
       }
   }
 
   spawnEnemy(x: number, y: number, type: 'basic' | 'shooter' | 'swarmer' | 'sniper' | 'tank' = 'basic') {
-      const enemy = new EnemyAI(this.enemies.length + 1, x, y, type);
+      const enemy = new EnemyAI(Math.random(), x, y, type);
       this.enemies.push(enemy);
   }
 
@@ -160,10 +136,8 @@ export class World implements IWorld {
     if (!tile) return false;
     
     // Overworld Impassables
-    if (tile.type === TileType.Water || tile.type === TileType.Stone) return false;
-    
-    // Rooftop Impassables
-    if (tile.type === TileType.Gap) return false;
+    // Added Gap here
+    if (tile.type === TileType.Water || tile.type === TileType.Stone || tile.type === TileType.Gap) return false;
 
     // 2. Check Static Objects (O(1) Lookup)
     const key = `${Math.round(x)},${Math.round(y)}`;
@@ -187,9 +161,8 @@ export class World implements IWorld {
     if (!tile) return false;
     
     // Projectiles BLOCKED by Stone (Mountains)
+    // Projectiles PASS over Gap/Water
     if (tile.type === TileType.Stone) return false;
-    
-    // Projectiles PASS over Water and Gap (Void)
     
     // 2. Check Static Objects (O(1) Lookup)
     const key = `${Math.round(x)},${Math.round(y)}`;
@@ -209,23 +182,10 @@ export class World implements IWorld {
   update(playerPos: Position, deltaTime: number) {
     this.particleSystem.update(deltaTime);
 
-    // Check Interactions (like portals)
-    // Optimization: Only iterate objects if they are interactive and near player?
-    // For now, iterating all objects for interaction/fading is okay as N is usually < 1000
-    // But we can optimize Fading to only check visible objects in Renderer, 
-    // keeping Logic update here minimal.
-    
+    // Nature Fader (Distance Check Optimization)
+    // Only iterate objects if they are interactive or need fading
+    // For now, iterating all objects is okay as N is usually < 1000
     for (const obj of this.objects) {
-        if (obj.type === 'door' && obj.interacted) {
-             obj.interacted = false; 
-             if (this.currentMap === 'overworld') {
-                 this.loadMap('rooftop');
-                 playerPos.x = this.spawnPosition.x;
-                 playerPos.y = this.spawnPosition.y;
-             }
-        }
-
-        // Nature Fader (Distance Check Optimization)
         if (obj.type === 'tree' || obj.type === 'giant_tree' || obj.type === 'cliff') {
             const dx = playerPos.x - obj.x;
             const dy = playerPos.y - obj.y;

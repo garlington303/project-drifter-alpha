@@ -1,0 +1,219 @@
+
+/* Base Overlay - Warm dark vignette */
+.rpg-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(12, 10, 8, 0.75);
+    z-index: 100;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    backdrop-filter: blur(3px);
+    animation: fadeIn 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
+}
+
+/* Main Container - The "Journal" */
+.rpg-window {
+    width: 90%;
+    max-width: 1200px;
+    height: 85%;
+    /* Dark Leather texture feel */
+    background-color: #1c1917; 
+    /* Subtle double border for binding feel */
+    border: 1px solid #44403c;
+    box-shadow: 
+        0 0 0 4px #1c1917, 
+        0 0 0 5px #292524,
+        0 25px 50px -12px rgba(0, 0, 0, 0.7);
+    border-radius: 2px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    color: #a8a29e; /* Warm grey/stone text */
+    font-family: 'Times New Roman', Times, serif;
+}
+
+/* Header / Navigation Bar */
+.rpg-header {
+    display: flex;
+    justify-content: center;
+    background-color: #151312;
+    border-bottom: 2px solid #292524;
+    padding: 0 2rem;
+}
+
+/* Individual Tab Items */
+.rpg-tab {
+    padding: 1.5rem 2.5rem;
+    text-align: center;
+    cursor: pointer;
+    font-family: 'Georgia', serif;
+    font-size: 1.0rem;
+    letter-spacing: 0.2em;
+    color: #57534e; /* Stone-600 */
+    transition: all 0.4s ease;
+    border: none;
+    position: relative;
+    background: transparent;
+    text-transform: uppercase;
+}
+
+.rpg-tab:hover {
+    color: #d6d3d1; /* Stone-300 */
+}
+
+/* Active Tab State */
+.rpg-tab.active {
+    color: #e7e5e4; /* Stone-200 */
+}
+
+/* Elegant accent mark for active tab instead of neon underline */
+.rpg-tab.active::after {
+    content: '◈';
+    position: absolute;
+    bottom: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 0.6rem;
+    color: #a16207; /* Gold/Bronze accent */
+    opacity: 0.8;
+}
+
+/* Main Content Area */
+.rpg-content {
+    flex: 1;
+    padding: 3rem;
+    background: 
+        radial-gradient(circle at center, #252220 0%, #1c1917 100%);
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+}
+
+/* Decor corners/border for content area */
+.rpg-content::before {
+    content: '';
+    position: absolute;
+    top: 12px; left: 12px; right: 12px; bottom: 12px;
+    border: 1px solid rgba(161, 98, 7, 0.15); /* Faint gold border */
+    pointer-events: none;
+}
+
+.placeholder-text {
+    font-size: 1.5rem;
+    color: #57534e;
+    font-family: 'Georgia', serif;
+    font-style: italic;
+    letter-spacing: 0.05em;
+    border: none;
+    padding: 2rem;
+}
+
+/* --- SKILL TREE STYLES --- */
+.skill-tree-container {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+/* SVG Layer for connections */
+.skill-connections {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+}
+
+.connection-line {
+    stroke: #44403c; /* Stone-700 - Ink line color */
+    stroke-width: 2;
+    fill: none;
+    opacity: 0.6;
+}
+
+/* The Node Itself */
+.skill-node {
+    position: absolute;
+    transform: translate(-50%, -50%); /* Center based on coords */
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background-color: #1c1917;
+    border: 2px solid #57534e;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+    z-index: 2;
+}
+
+.skill-node:hover {
+    border-color: #a16207; /* Gold/Bronze */
+    transform: translate(-50%, -50%) scale(1.1);
+    background-color: #292524;
+}
+
+.skill-node.unlocked {
+    border-color: #a16207;
+    background-color: #292524;
+    box-shadow: 0 0 10px rgba(161, 98, 7, 0.2);
+}
+
+.skill-icon {
+    font-size: 1.2rem;
+    color: #78716c;
+}
+
+.skill-node.unlocked .skill-icon {
+    color: #d6d3d1;
+}
+
+/* Labels below nodes */
+.skill-label {
+    position: absolute;
+    top: 55px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-family: 'Georgia', serif;
+    font-size: 0.75rem;
+    color: #57534e;
+    white-space: nowrap;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    pointer-events: none;
+}
+
+.skill-node:hover .skill-label {
+    color: #a16207;
+}
+
+/* Footer */
+.rpg-footer {
+    padding: 1rem 2rem;
+    border-top: 1px solid #292524;
+    font-family: 'Georgia', serif;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+    color: #44403c;
+    display: flex;
+    justify-content: space-between;
+    background-color: #151312;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+}

@@ -188,8 +188,6 @@ export class Renderer {
                     this.drawTree(obj, time);
                 } else if (obj.type === 'cliff') {
                     this.drawCliff(obj);
-                } else if (obj.type === 'door') {
-                    this.drawDoor(obj, time);
                 } else {
                     this.drawWorldObject(obj);
                 }
@@ -235,23 +233,8 @@ export class Renderer {
     }
   }
 
-  // ... (Existing draw methods: drawDoor, drawTree, drawCliff, drawWorldObject unchanged) ...
-  private drawDoor(obj: WorldObject, time: number) {
-    const iso = this.toIso(obj.x, obj.y);
-    const width = 24;
-    const height = 48;
-    const pulse = Math.sin(time * 0.005) * 0.2 + 0.8;
-    this.ctx.save();
-    this.ctx.translate(iso.x, iso.y);
-    this.ctx.fillStyle = '#1e293b';
-    this.ctx.fillRect(-width/2, -height + TILE_HEIGHT/2, width, height);
-    this.ctx.fillStyle = COLORS.portal;
-    this.ctx.globalAlpha = pulse;
-    this.ctx.fillRect(-width/2 + 4, -height + TILE_HEIGHT/2 + 4, width - 8, height - 8);
-    this.ctx.globalAlpha = 1.0;
-    this.ctx.restore();
-  }
-
+  // ... (Existing draw methods: drawTree, drawCliff, drawWorldObject unchanged) ...
+  
   private drawTree(obj: WorldObject, time: number) {
     const iso = this.toIso(obj.x, obj.y);
     const isGiant = obj.type === 'giant_tree';

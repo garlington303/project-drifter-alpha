@@ -75,9 +75,7 @@ export class OverworldGenerator {
       }
     }
 
-    // 2. Connectivity / Flood Fill
-    // Find a random ground tile near center
-    // (Simplified)
+    // 2. Connectivity / Flood Fill (Simplified: Center is usually connected in this implementation)
     
     // 3. Convert Grid to Chunks
     for (let cx = 0; cx < Math.ceil(MAP_WIDTH / CHUNK_SIZE); cx++) {
@@ -108,18 +106,6 @@ export class OverworldGenerator {
 
     // 4. Determine Spawn Point (Center-most valid tile)
     const spawnPosition = { x: MAP_WIDTH / 2, y: MAP_HEIGHT / 2 };
-
-    // 5. Place Portal Door (Map Transition) near spawn
-    objects.push({
-      id: 'portal_door',
-      type: 'door',
-      x: spawnPosition.x + 3,
-      y: spawnPosition.y - 3,
-      width: 1,
-      depth: 0.5,
-      height: 48,
-      interactable: true
-    });
 
     return { chunks, objects, spawnPosition };
   }

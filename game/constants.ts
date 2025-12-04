@@ -6,7 +6,7 @@ export const CHUNK_SIZE = 16; // 16x16 tiles per chunk
 export const LOAD_RADIUS = 2; // Keep 2 chunks loaded in every direction (5x5 grid)
 export const MAX_CHUNKS = 49; // Safety limit (7x7)
 
-export const CAMERA_ZOOM = 2; // Zoom level for the camera (2x)
+export const CAMERA_ZOOM = 3.5; // Zoom level for the camera (3.5x)
 export const CAMERA_LOOK_AHEAD = 0.10; // How much the camera follows the mouse (0 = none, 1 = locked to mouse)
 export const MAX_CAMERA_OFFSET = 50; // Max pixels the camera can shift from center (screen space)
 
@@ -77,14 +77,14 @@ export const GIANT_TREE_WIDTH = 48;
 export const GIANT_TREE_HEIGHT = 80;
 export const CLIFF_HEIGHT = 32;
 
-// ROOFTOP GENERATION (Map B)
+// ROOFTOP GENERATION (New)
 export const ROOFTOP_PLATFORM_COUNT = 15;
-export const ROOFTOP_MIN_SIZE = 4;
-export const ROOFTOP_MAX_SIZE = 8;
-export const BRIDGE_MIN_LEN = 3;
-export const BRIDGE_MAX_LEN = 6;
+export const ROOFTOP_MIN_SIZE = 6;
+export const ROOFTOP_MAX_SIZE = 12;
+export const BRIDGE_MIN_LEN = 4;
+export const BRIDGE_MAX_LEN = 10;
 
-// Visual Colors (Lush Fantasy Theme & Buried City)
+// Visual Colors (Lush Fantasy Theme)
 export const COLORS = {
   // Terrain
   water: '#3b82f6',      // Bright blue
@@ -92,10 +92,10 @@ export const COLORS = {
   dirt: '#b45309',       // Rich Earth
   stone: '#64748b',      // Slate Grey (Mountains)
   
-  // Rooftop / Buried City
-  rooftop: '#94a3b8',    // Concrete
-  bridge: '#78350f',     // Wood/Scrap
-  gap: '#d97706',        // Sandy Void / Abyss
+  // Rooftop (New)
+  gap: '#0f172a',        // Void (Slate 900)
+  rooftop: '#475569',    // Concrete (Slate 600)
+  bridge: '#64748b',     // Metal/Path (Slate 500)
 
   // Objects
   treeFoliage: '#059669',
@@ -103,7 +103,6 @@ export const COLORS = {
   giantTreeFoliage: '#064e3b',
   cliffFace: '#475569',
   cliffTop: '#64748b',
-  portal: '#8b5cf6',     // Violet Portal
 
   // VFX
   muzzleFlash: '#fef3c7',

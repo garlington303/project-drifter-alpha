@@ -1,3 +1,4 @@
+
 import React, { useEffect, useRef } from 'react';
 import { InputManager } from '../game/InputManager';
 import { Player } from '../game/Player';
@@ -157,6 +158,28 @@ const GameCanvas: React.FC<GameCanvasProps> = ({ isPaused, zoomLevel, shakeInten
 
     playerRef.current.position = { ...worldRef.current.spawnPosition };
 
+    // Debug Spawn Listener
+    const handleSpawnEnemy = (e: CustomEvent) => {
+        if (!worldRef.current || !playerRef.current) return;
+        
+        const type = e.detail;
+        
+        // Random spawn offset around player
+        const angle = Math.random() * Math.PI * 2;
+        const dist = 5 + Math.random() * 3;
+        const x = playerRef.current.position.x + Math.cos(angle) * dist;
+        const y = playerRef.current.position.y + Math.sin(angle) * dist;
+        
+        // Basic valid position check (if not valid, just spawn on player for chaos)
+        if (worldRef.current.isWalkable(x, y)) {
+             worldRef.current.spawnEnemy(x, y, type);
+        } else {
+             worldRef.current.spawnEnemy(playerRef.current.position.x, playerRef.current.position.y, type);
+        }
+    };
+
+    window.addEventListener('debug-spawn-enemy' as any, handleSpawnEnemy);
+
     const handleResize = () => {
       if (canvasRef.current && rendererRef.current) {
         canvasRef.current.width = window.innerWidth;
@@ -171,6 +194,7 @@ const GameCanvas: React.FC<GameCanvasProps> = ({ isPaused, zoomLevel, shakeInten
     return () => {
       cancelAnimationFrame(requestRef.current);
       window.removeEventListener('resize', handleResize);
+      window.removeEventListener('debug-spawn-enemy' as any, handleSpawnEnemy);
       if (inputRef.current) inputRef.current.cleanup();
     };
   }, []); // Keeps empty dependency array to prevent game reset

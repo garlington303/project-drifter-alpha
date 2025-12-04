@@ -1,4 +1,5 @@
 
+
 export interface Position {
   x: number;
   y: number;
@@ -85,9 +86,10 @@ export enum TileType {
   Extraction = 'extraction',
   Abyss = 'abyss',
   Wall = 'wall',
-  Rooftop = 'rooftop', // Concrete platform
-  Bridge = 'bridge',   // Connecting path
-  Gap = 'gap'          // Impassable void/sand
+  // New Rooftop Types
+  Gap = 'gap',
+  Rooftop = 'rooftop',
+  Bridge = 'bridge'
 }
 
 export interface Tile {
@@ -111,7 +113,7 @@ export interface Chunk {
 
 export interface WorldObject {
   id: string;
-  type: 'crate' | 'rock' | 'terminal' | 'tree' | 'giant_tree' | 'cliff' | 'stairs_up' | 'stairs_down' | 'door';
+  type: 'crate' | 'rock' | 'terminal' | 'tree' | 'giant_tree' | 'cliff' | 'stairs_up' | 'stairs_down';
   x: number;
   y: number;
   width: number; // For collision/rendering (base width)
